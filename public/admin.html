@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pappu Game - Admin Panel</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 15px;
+    }
+    h2, h3 { color: #facc15; text-align: center; margin-bottom: 15px; }
+
+    /* Login Screen Modal */
+    #login-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+    .login-card {
+      background: #1e293b;
+      padding: 25px;
+      border-radius: 12px;
+      width: 90%; max-width: 380px;
+      border: 1px solid #334155;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .input-group {
+      margin-bottom: 12px;
+    }
+    .input-group label {
+      display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;
+    }
+    .input-group input {
+      width: 100%; padding: 10px;
+      border-radius: 6px; border: 1px solid #475569;
+      background: #0f172a; color: #fff; font-size: 14px;
+    }
+
+    /* Main Dashboard Layout */
+    .dashboard { display: none; }
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #334155;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 10px; margin-top: 10px;
+    }
+    .bet-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px; margin-top: 10px;
+    }
+    .bet-box {
+      background: #0f172a; border: 1px solid #334155;
+      padding: 10px; border-radius: 6px; text-align: center;
+    }
+    .bet-box .symbol { font-size: 18px; font-weight: bold; }
+    .bet-box .amount { color: #facc15; font-weight: bold; margin-top: 4px; }
+
+    button {
+      padding: 10px; border: none; border-radius: 6px;
+      font-weight: bold; cursor: pointer;
+      background: #3b82f6; color: white; font-size: 14px;
+      width: 100%; margin-top: 5px;
+    }
+    button:active { transform: scale(0.97); }
+    .btn-select { background: #8b5cf6; }
+    .btn-select.active { background: #22c55e; border: 2px solid #fff; }
+    .btn-danger { background: #ef4444; }
+    .btn-warning { background: #f59e0b; }
+    .btn-success { background: #10b981; }
+
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #334155; padding: 8px; text-align: center;
+    }
+    th { background: #0f172a; color: #facc15; }
+    .status-badge {
+      padding: 2px 6px; border-radius: 4px; font-size: 11px;
+    }
+    .status-active { background: #166534; color: #4ade80; }
+    .status-blocked { background: #991b1b; color: #fca5a5; }
+  </style>
+</head>
+<body>
+
+  <!-- Login Modal -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <h2>🔐 Admin Login</h2>
+      <div class="input-group">
+        <label>Admin ID</label>
+        <input type="text" id="admin-id" placeholder="Ex. PP00505555" value="PP00505555">
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="admin-pass" placeholder="पासवर्ड टाका">
+      </div>
+      <div class="input-group">
+        <label>4-Digit Security PIN</label>
+        <input type="password" id="admin-pin" maxlength="4" placeholder="****">
+      </div>
+      <button onclick="loginAdmin()">Login</button>
+      <p id="login-err" style="color:#ef4444; font-size:12px; margin-top:8px; text-align:center;"></p>
+    </div>
+  </div>
+
+  <!-- Dashboard Container -->
+  <div class="dashboard" id="main-dashboard">
+    <h2>⚙️ Admin Control Panel</h2>
+
+    <!-- Live Timer & Profit/Loss Summary -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>गेम टायमर: <span id="admin-timer" style="color:#f87171; font-weight:bold; font-size:18px;">60</span> सेकंद</div>
+        <div>एकूण बेटिंग: <span id="total-bets" style="color:#facc15; font-weight:bold;">₹0</span></div>
+      </div>
+      <hr style="border-color:#334155; margin:10px 0;">
+      <div>अनुमानित प्रॉफिट / लॉस: <span id="pnl-status" style="font-weight:bold; color:#4ade80;">₹0</span></div>
+    </div>
+
+    <!-- Live Bet Report per Symbol -->
+    <div class="card">
+      <h3>📊 Live Betting Report</h3>
+      <div class="bet-grid" id="live-bet-report">
+        <!-- Live bets will render here -->
+      </div>
+    </div>
+
+    <!-- Force Winner Selection -->
+    <div class="card">
+      <h3>🎯 पुढील विजेता निवडा (Force Winner)</h3>
+      <div class="grid">
+        <button class="btn-select" onclick="setWinner('chhatri', this)">☂️ छत्री</button>
+        <button class="btn-select" onclick="setWinner('ball', this)">⚽ बॉल</button>
+        <button class="btn-select" onclick="setWinner('sun', this)">☀️ सूर्य</button>
+        <button class="btn-select" onclick="setWinner('lamp', this)">🪔 दिवा</button>
+        <button class="btn-select" onclick="setWinner('cow', this)">🐄 गाय</button>
+        <button class="btn-select" onclick="setWinner('bucket', this)">🪣 बादली</button>
+        <button class="btn-select" onclick="setWinner('kite', this)">🪁 पतंग</button>
+        <button class="btn-select" onclick="setWinner('top', this)">🪀 भोवरा</button>
+        <button class="btn-select" onclick="setWinner('flower', this)">🌸 फूल</button>
+        <button class="btn-select" onclick="setWinner('butterfly', this)">🦋 फुलपाखरू</button>
+        <button class="btn-select" onclick="setWinner('pigeon', this)">🕊️ कबूतर</button>
+        <button class="btn-select" onclick="setWinner('rabbit', this)">🐇 ससा</button>
+      </div>
+    </div>
+
+    <!-- User Management Section -->
+    <div class="card">
+      <h3>👤 User Management (नवीन युझर / पॉइंट ट्रान्सफर)</h3>
+      
+      <!-- Create New User Form -->
+      <div style="margin-top:10px; background:#0f172a; padding:10px; border-radius:6px;">
+        <h4 style="color:#38bdf8; margin-bottom:8px;">+ नवीन युझर तयार करा</h4>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+          <input type="text" id="new-username" placeholder="नाव / Username" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
+          <input type="password" id="new-password" placeholder="Password" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
+          <input type="password" id="new-pin" maxlength="4" placeholder="4-Digit PIN" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
+        </div>
+        <button class="btn-success" onclick="createUser()" style="margin-top:8px;">युझर बनवा (Create User)</button>
+      </div>
+
+      <!-- Point Transfer / Receive -->
+      <div style="margin-top:15px; background:#0f172a; padding:10px; border-radius:6px;">
+        <h4 style="color:#38bdf8; margin-bottom:8px;">💳 पॉइंट ट्रान्सफर / रिसीव्ह (Point Add/Deduct)</h4>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+          <input type="text" id="trans-user-id" placeholder="User ID (Ex. PP00257374)" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
+          <input type="number" id="trans-amount" placeholder="पॉइंट्स / रक्कम" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button class="btn-success" onclick="transferPoints('add')">+ Add Points</button>
+          <button class="btn-warning" onclick="transferPoints('deduct')">- Deduct Points</button>
+        </div>
+      </div>
+
+      <!-- Users List & Action Table -->
+      <h4 style="margin-top:15px; color:#facc15;">सर्व युझर्सची यादी</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>User ID</th>
+            <th>Name</th>
+            <th>Points</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="user-list-body">
+          <!-- Users dynamic data -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    var socket = io();
+
+    function loginAdmin() {
+      var id = document.getElementById('admin-id').value;
+      var pass = document.getElementById('admin-pass').value;
+      var pin = document.getElementById('admin-pin').value;
+
+      if (!id || !pass || !pin) {
+        document.getElementById('login-err').innerText = 'कृपया सर्व माहिती भरा!';
+        return;
+      }
+
+      socket.emit('admin-login', { id: id, pass: pass, pin: pin });
+    }
+
+    socket.on('admin-login-response', function(res) {
+      if (res.success) {
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('main-dashboard').style.display = 'block';
+        socket.emit('get-admin-data');
+      } else {
+        document.getElementById('login-err').innerText = res.message;
+      }
+    });
+
+    function setWinner(symbol, btn) {
+      document.querySelectorAll('.btn-select').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      socket.emit('admin-set-winner', symbol);
+    }
+
+    function createUser() {
+      var name = document.getElementById('new-username').value;
+      var pass = document.getElementById('new-password').value;
+      var pin = document.getElementById('new-pin').value;
+
+      if (!name || !pass || !pin || pin.length !== 4) {
+        alert('कृपया योग्य माहिती आणि ४ अंकी PIN प्रविष्ट करा.');
+        return;
+      }
+
+      socket.emit('admin-create-user', { name: name, pass: pass, pin: pin });
+    }
+
+    function transferPoints(action) {
+      var userId = document.getElementById('trans-user-id').value;
+      var amount = parseInt(document.getElementById('trans-amount').value);
+
+      if (!userId || isNaN(amount) || amount <= 0) {
+        alert('कृपया योग्य User ID आणि रक्कम टाका.');
+        return;
+      }
+
+      socket.emit('admin-point-action', { userId: userId, amount: amount, action: action });
+    }
+
+    function toggleBlockUser(userId, currentStatus) {
+      socket.emit('admin-toggle-block', { userId: userId, block: !currentStatus });
+    }
+
+    function deleteUser(userId) {
+      if (confirm('तुम्हाला नक्की हा युझर कायमचा Delete करायचा आहे का?')) {
+        socket.emit('admin-delete-user', userId);
+      }
+    }
+
+    function changeUserPass(userId) {
+      var newPass = prompt('नवीन Password टाका:');
+      var newPin = prompt('नवीन 4-Digit PIN टाका:');
+      if (newPass && newPin && newPin.length === 4) {
+        socket.emit('admin-change-user-creds', { userId: userId, pass: newPass, pin: newPin });
+      } else {
+        alert('अवैध पासवर्ड किंवा पिन!');
+      }
+    }
+
+    socket.on('timer-update', function(time) {
+      document.getElementById('admin-timer').innerText = time;
+    });
+
+    socket.on('live-bets-update', function(data) {
+      var reportBox = document.getElementById('live-bet-report');
+      reportBox.innerHTML = '';
+      var totalBets = 0;
+
+      for (var symbol in data.bets) {
+        var amt = data.bets[symbol];
+        totalBets += amt;
+        reportBox.innerHTML += `
+          <div class="bet-box">
+            <div class="symbol">${symbol}</div>
+            <div class="amount">₹${amt}</div>
+          </div>
+        `;
+      }
+
+      document.getElementById('total-bets').innerText = '₹' + totalBets;
+      document.getElementById('pnl-status').innerText = '₹' + (totalBets - data.expectedPayout);
+    });
+
+    socket.on('users-list-update', function(users) {
+      var tbody = document.getElementById('user-list-body');
+      tbody.innerHTML = '';
+
+      users.forEach(u => {
+        var statusBadge = u.isBlocked 
+          ? `<span class="status-badge status-blocked">Blocked</span>` 
+          : `<span class="status-badge status-active">Active</span>`;
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${u.id}</td>
+            <td>${u.name}</td>
+            <td style="color:#facc15; font-weight:bold;">₹${u.points}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <button style="padding:4px 8px; font-size:11px;" class="btn-warning" onclick="changeUserPass('${u.id}')">Pass/Pin</button>
+              <button style="padding:4px 8px; font-size:11px;" class="btn-select" onclick="toggleBlockUser('${u.id}', ${u.isBlocked})">${u.isBlocked ? 'Unblock' : 'Block'}</button>
+              <button style="padding:4px 8px; font-size:11px;" class="btn-danger" onclick="deleteUser('${u.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    });
+
+    socket.on('admin-action-msg', function(msg) {
+      alert(msg);
+    });
+  </script>
+</body>
+  </html>
+  
