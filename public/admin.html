@@ -15,7 +15,6 @@
     }
     h2, h3 { color: #facc15; text-align: center; margin-bottom: 15px; }
 
-    /* Login Screen Modal */
     #login-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -31,41 +30,23 @@
       border: 1px solid #334155;
       box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
-    .input-group {
-      margin-bottom: 12px;
-    }
-    .input-group label {
-      display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px;
-    }
+    .input-group { margin-bottom: 12px; }
+    .input-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px; }
     .input-group input {
       width: 100%; padding: 10px;
       border-radius: 6px; border: 1px solid #475569;
       background: #0f172a; color: #fff; font-size: 14px;
     }
 
-    /* Main Dashboard Layout */
     .dashboard { display: none; }
     .card {
-      background: #1e293b;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 15px;
+      background: #1e293b; padding: 15px;
+      border-radius: 10px; margin-bottom: 15px;
       border: 1px solid #334155;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 10px; margin-top: 10px;
-    }
-    .bet-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 10px; margin-top: 10px;
-    }
-    .bet-box {
-      background: #0f172a; border: 1px solid #334155;
-      padding: 10px; border-radius: 6px; text-align: center;
-    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
+    .bet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
+    .bet-box { background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; text-align: center; }
     .bet-box .symbol { font-size: 18px; font-weight: bold; }
     .bet-box .amount { color: #facc15; font-weight: bold; margin-top: 4px; }
 
@@ -82,29 +63,22 @@
     .btn-warning { background: #f59e0b; }
     .btn-success { background: #10b981; }
 
-    table {
-      width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;
-    }
-    th, td {
-      border: 1px solid #334155; padding: 8px; text-align: center;
-    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th, td { border: 1px solid #334155; padding: 8px; text-align: center; }
     th { background: #0f172a; color: #facc15; }
-    .status-badge {
-      padding: 2px 6px; border-radius: 4px; font-size: 11px;
-    }
+    .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 11px; }
     .status-active { background: #166534; color: #4ade80; }
     .status-blocked { background: #991b1b; color: #fca5a5; }
   </style>
 </head>
 <body>
 
-  <!-- Login Modal -->
   <div id="login-overlay">
     <div class="login-card">
       <h2>🔐 Admin Login</h2>
       <div class="input-group">
         <label>Admin ID</label>
-        <input type="text" id="admin-id" placeholder="Ex. PP00505555" value="PP00505555">
+        <input type="text" id="admin-id" value="PP00505555">
       </div>
       <div class="input-group">
         <label>Password</label>
@@ -119,11 +93,9 @@
     </div>
   </div>
 
-  <!-- Dashboard Container -->
   <div class="dashboard" id="main-dashboard">
     <h2>⚙️ Admin Control Panel</h2>
 
-    <!-- Live Timer & Profit/Loss Summary -->
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>गेम टायमर: <span id="admin-timer" style="color:#f87171; font-weight:bold; font-size:18px;">60</span> सेकंद</div>
@@ -133,15 +105,11 @@
       <div>अनुमानित प्रॉफिट / लॉस: <span id="pnl-status" style="font-weight:bold; color:#4ade80;">₹0</span></div>
     </div>
 
-    <!-- Live Bet Report per Symbol -->
     <div class="card">
       <h3>📊 Live Betting Report</h3>
-      <div class="bet-grid" id="live-bet-report">
-        <!-- Live bets will render here -->
-      </div>
+      <div class="bet-grid" id="live-bet-report"></div>
     </div>
 
-    <!-- Force Winner Selection -->
     <div class="card">
       <h3>🎯 पुढील विजेता निवडा (Force Winner)</h3>
       <div class="grid">
@@ -160,27 +128,24 @@
       </div>
     </div>
 
-    <!-- User Management Section -->
     <div class="card">
-      <h3>👤 User Management (नवीन युझर / पॉइंट ट्रान्सफर)</h3>
+      <h3>👤 User Management</h3>
       
-      <!-- Create New User Form -->
       <div style="margin-top:10px; background:#0f172a; padding:10px; border-radius:6px;">
         <h4 style="color:#38bdf8; margin-bottom:8px;">+ नवीन युझर तयार करा</h4>
         <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
-          <input type="text" id="new-username" placeholder="नाव / Username" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
+          <input type="text" id="new-username" placeholder="नाव" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
           <input type="password" id="new-password" placeholder="Password" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
-          <input type="password" id="new-pin" maxlength="4" placeholder="4-Digit PIN" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
+          <input type="password" id="new-pin" maxlength="4" placeholder="PIN" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
         </div>
-        <button class="btn-success" onclick="createUser()" style="margin-top:8px;">युझर बनवा (Create User)</button>
+        <button class="btn-success" onclick="createUser()" style="margin-top:8px;">युझर बनवा</button>
       </div>
 
-      <!-- Point Transfer / Receive -->
       <div style="margin-top:15px; background:#0f172a; padding:10px; border-radius:6px;">
-        <h4 style="color:#38bdf8; margin-bottom:8px;">💳 पॉइंट ट्रान्सफर / रिसीव्ह (Point Add/Deduct)</h4>
+        <h4 style="color:#38bdf8; margin-bottom:8px;">💳 पॉइंट ट्रान्सफर / रिसीव्ह</h4>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-          <input type="text" id="trans-user-id" placeholder="User ID (Ex. PP00257374)" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
-          <input type="number" id="trans-amount" placeholder="पॉइंट्स / रक्कम" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
+          <input type="text" id="trans-user-id" placeholder="User ID" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
+          <input type="number" id="trans-amount" placeholder="रक्कम" style="padding:8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px;">
         </div>
         <div style="display:flex; gap:8px; margin-top:8px;">
           <button class="btn-success" onclick="transferPoints('add')">+ Add Points</button>
@@ -188,7 +153,6 @@
         </div>
       </div>
 
-      <!-- Users List & Action Table -->
       <h4 style="margin-top:15px; color:#facc15;">सर्व युझर्सची यादी</h4>
       <table>
         <thead>
@@ -200,12 +164,9 @@
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="user-list-body">
-          <!-- Users dynamic data -->
-        </tbody>
+        <tbody id="user-list-body"></tbody>
       </table>
     </div>
-
   </div>
 
   <script>
@@ -249,7 +210,6 @@
         alert('कृपया योग्य माहिती आणि ४ अंकी PIN प्रविष्ट करा.');
         return;
       }
-
       socket.emit('admin-create-user', { name: name, pass: pass, pin: pin });
     }
 
@@ -258,10 +218,9 @@
       var amount = parseInt(document.getElementById('trans-amount').value);
 
       if (!userId || isNaN(amount) || amount <= 0) {
-        alert('कृपया योग्य User ID आणि रक्कम टाका.');
+        alert('योग्य User ID आणि रक्कम टाका.');
         return;
       }
-
       socket.emit('admin-point-action', { userId: userId, amount: amount, action: action });
     }
 
@@ -270,7 +229,7 @@
     }
 
     function deleteUser(userId) {
-      if (confirm('तुम्हाला नक्की हा युझर कायमचा Delete करायचा आहे का?')) {
+      if (confirm('नक्की डिलीट करायचे आहे का?')) {
         socket.emit('admin-delete-user', userId);
       }
     }
@@ -304,7 +263,6 @@
           </div>
         `;
       }
-
       document.getElementById('total-bets').innerText = '₹' + totalBets;
       document.getElementById('pnl-status').innerText = '₹' + (totalBets - data.expectedPayout);
     });
@@ -325,9 +283,9 @@
             <td style="color:#facc15; font-weight:bold;">₹${u.points}</td>
             <td>${statusBadge}</td>
             <td>
-              <button style="padding:4px 8px; font-size:11px;" class="btn-warning" onclick="changeUserPass('${u.id}')">Pass/Pin</button>
+              <button style="padding:4px 8px; font-size:11px;" class="btn-warning" onclick="changeUserPass('${u.id}')">Pass</button>
               <button style="padding:4px 8px; font-size:11px;" class="btn-select" onclick="toggleBlockUser('${u.id}', ${u.isBlocked})">${u.isBlocked ? 'Unblock' : 'Block'}</button>
-              <button style="padding:4px 8px; font-size:11px;" class="btn-danger" onclick="deleteUser('${u.id}')">Delete</button>
+              <button style="padding:4px 8px; font-size:11px;" class="btn-danger" onclick="deleteUser('${u.id}')">Del</button>
             </td>
           </tr>
         `;
