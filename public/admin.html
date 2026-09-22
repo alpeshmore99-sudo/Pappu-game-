@@ -182,16 +182,19 @@
         return;
       }
 
+      alert('बटन क्लिक झाले, सर्व्हरकडे रिक्वेस्ट जात आहे...');
       socket.emit('admin-login', { id: id, pass: pass, pin: pin });
     }
 
     socket.on('admin-login-response', function(res) {
       if (res.success) {
+        alert('लॉगिन यशस्वी झाले!');
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('main-dashboard').style.display = 'block';
         socket.emit('get-admin-data');
       } else {
         document.getElementById('login-err').innerText = res.message;
+        alert('लॉगिन अयशस्वी: ' + res.message);
       }
     });
 
@@ -297,5 +300,4 @@
     });
   </script>
 </body>
-  </html>
-  
+</html>
