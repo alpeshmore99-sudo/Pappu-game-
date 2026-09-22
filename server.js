@@ -10,6 +10,15 @@ const io = new Server(server);
 app.use(expressApp.json());
 app.use(expressApp.urlencoded({ extended: true }));
 app.use(expressApp.static(path.join(__dirname)));
+// Route for User Panel (Main Page)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Route for Admin Panel
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
 
 // Admin Credentials (Changable)
 let adminConfig = {
