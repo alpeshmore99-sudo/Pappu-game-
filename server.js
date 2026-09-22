@@ -1,125 +1,139 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+// Static files (frontend)
+app.use(express.static(__dirname));
 
-// Default Admin Credentials
-const ADMIN_DETAILS = {
-  id: 'PP00505555',
-  pass: 'admin123',
-  pin: '1234'
-};
-
-let timerVal = 60;
-let manualWinner = null;
-let currentBets = {};
+// In-Memory Database / Data Storage
 let users = [
-  { id: 'PP00257374', name: 'Demo User', pass: '1234', pin: '1234', points: 5000, isBlocked: false }
+    { id: 'PP00257374', name: 'Rahul', pass: '1234', pin: '1234', points: 500, isBlocked: false }
 ];
 
-// Initialize Bets
-const symbols = ['chhatri', 'ball', 'sun', 'lamp', 'cow', 'bucket', 'kite', 'top', 'flower', 'butterfly', 'pigeon', 'rabbit'];
-symbols.forEach(s => currentBets[s] = 0);
+let gameState = {
+    timer: 60,
+    bets: {
+        chhatri: 0, ball: 0, sun: 0, lamp: 0,
+        cow: 0, bucket: 0, kite: 0, top: 0,
+        flower: 0, butterfly: 0, pigeon: 0, rabbit: 0
+    },
+    expectedPayout: 0,
+    forcedWinner: null
+};
 
-// Timer Loop
+// Timer logic
 setInterval(() => {
-  timerVal--;
-  if (timerVal <= 0) {
-    timerVal = 60;
-    manualWinner = null; // Reset winner
-    symbols.forEach(s => currentBets[s] = 0); // Reset bets
-  }
-  io.emit('timer-update', timerVal);
+    gameState.timer--;
+    if (gameState.timer <= 0) {
+        gameState.timer = 60;
+        // Reset bets for next round
+        for (let key in gameState.bets) {
+            gameState.bets[key] = 0;
+        }
+        gameState.expectedPayout = 0;
+        gameState.forcedWinner = null;
+    }
+    io.emit('timer-update', gameState.timer);
+    io.emit('live-bets-update', { bets: gameState.bets, expectedPayout: gameState.expectedPayout });
 }, 1000);
 
 io.on('connection', (socket) => {
+    console.log('A user connected:', socket.id);
 
-  // Admin Login Handler
-  socket.on('admin-login', (data) => {
-    if (data.id === ADMIN_DETAILS.id && data.pass === ADMIN_DETAILS.pass && data.pin === ADMIN_DETAILS.pin) {
-      socket.emit('admin-login-response', { success: true });
-    } else {
-      socket.emit('admin-login-response', { success: false, message: 'चुकीचा ID, Password किंवा PIN!' });
-    }
-  });
-
-  // Fetch Data on Admin Login
-  socket.on('get-admin-data', () => {
+    // Send initial users list
     socket.emit('users-list-update', users);
-    socket.emit('live-bets-update', { bets: currentBets, expectedPayout: 0 });
-  });
 
-  // Force Winner
-  socket.on('admin-set-winner', (symbol) => {
-    manualWinner = symbol;
-    socket.emit('admin-action-msg', `पुढील विजेता सेट केला: ${symbol}`);
-  });
+    // --- Admin Login Handler ---
+    socket.on('admin-login', (data) => {
+        if (data.id === 'PP00505555' && data.pass === 'admin123' && data.pin === '1234') {
+            socket.emit('admin-login-response', { success: true });
+        } else {
+            socket.emit('admin-login-response', { success: false, message: 'चुकीचा ID, Password किंवा PIN!' });
+        }
+    });
 
-  // Create User
-  socket.on('admin-create-user', (data) => {
-    const newId = 'PP00' + Math.floor(100000 + Math.random() * 900000);
-    const newUser = { 
-      id: newId, 
-      name: data.name, 
-      pass: data.pass, 
-      pin: data.pin, 
-      points: 0, 
-      isBlocked: false 
-    };
-    users.push(newUser);
-    io.emit('users-list-update', users);
-    socket.emit('admin-action-msg', `नवीन युझर तयार झाला! ID: ${newId}`);
-  });
+    // Get Admin Dashboard Data
+    socket.on('get-admin-data', () => {
+        socket.emit('users-list-update', users);
+        socket.emit('live-bets-update', { bets: gameState.bets, expectedPayout: gameState.expectedPayout });
+    });
 
-  // Change User Password/PIN
-  socket.on('admin-change-user-creds', (data) => {
-    let u = users.find(user => user.id === data.userId);
-    if (u) {
-      u.pass = data.pass;
-      u.pin = data.pin;
-      socket.emit('admin-action-msg', 'युझरचा पासवर्ड आणि पिन बदलला!');
-    } else {
-      socket.emit('admin-action-msg', 'युझर सापडला नाही!');
-    }
-  });
+    // Set Force Winner
+    socket.on('admin-set-winner', (symbol) => {
+        gameState.forcedWinner = symbol;
+        console.log('Forced winner set to:', symbol);
+    });
 
-  // Point Transfer/Receive
-  socket.on('admin-point-action', (data) => {
-    let u = users.find(user => user.id === data.userId);
-    if (u) {
-      if (data.action === 'add') u.points += data.amount;
-      else if (data.action === 'deduct') u.points = Math.max(0, u.points - data.amount);
-      io.emit('users-list-update', users);
-      socket.emit('admin-action-msg', 'पॉइंट्स अपडेट झाले!');
-    } else {
-      socket.emit('admin-action-msg', 'युझर सापडला नाही!');
-    }
-  });
+    // Create New User
+    socket.on('admin-create-user', (data) => {
+        const randomId = 'PP' + Math.floor(10000000 + Math.random() * 90000000);
+        users.push({
+            id: randomId,
+            name: data.name,
+            pass: data.pass,
+            pin: data.pin,
+            points: 100, // Starting default points
+            isBlocked: false
+        });
+        io.emit('users-list-update', users);
+        socket.emit('admin-action-msg', 'नवीन युझर यशस्वीरित्या तयार झाला! ID: ' + randomId);
+    });
 
-  // Block/Unblock User
-  socket.on('admin-toggle-block', (data) => {
-    let u = users.find(user => user.id === data.userId);
-    if (u) {
-      u.isBlocked = data.block;
-      io.emit('users-list-update', users);
-    }
-  });
+    // Point Action (Add/Deduct)
+    socket.on('admin-point-action', (data) => {
+        const user = users.find(u => u.id === data.userId);
+        if (user) {
+            if (data.action === 'add') {
+                user.points += data.amount;
+                socket.emit('admin-action-msg', `${data.amount} पॉइंट्स यशस्वीरित्या जोडले गेले.`);
+            } else if (data.action === 'deduct') {
+                user.points = Math.max(0, user.points - data.amount);
+                socket.emit('admin-action-msg', `${data.amount} पॉइंट्स वजा केले गेले.`);
+            }
+            io.emit('users-list-update', users);
+        } else {
+            socket.emit('admin-action-msg', 'युझर सापडला नाही!');
+        }
+    });
 
-  // Delete User
-  socket.on('admin-delete-user', (userId) => {
-    users = users.filter(u => u.id !== userId);
-    io.emit('users-list-update', users);
-    socket.emit('admin-action-msg', 'युझर डिलीट केला!');
-  });
+    // Toggle Block User
+    socket.on('admin-toggle-block', (data) => {
+        const user = users.find(u => u.id === data.userId);
+        if (user) {
+            user.isBlocked = data.block;
+            io.emit('users-list-update', users);
+            socket.emit('admin-action-msg', user.isBlocked ? 'युझर ब्लॉक केला.' : 'युझर अनब्लॉक केला.');
+        }
+    });
 
+    // Delete User
+    socket.on('admin-delete-user', (userId) => {
+        users = users.filter(u => u.id !== userId);
+        io.emit('users-list-update', users);
+        socket.emit('admin-action-msg', 'युझर डिलीट केला.');
+    });
+
+    // Change User Credentials
+    socket.on('admin-change-user-creds', (data) => {
+        const user = users.find(u => u.id === data.userId);
+        if (user) {
+            user.pass = data.pass;
+            user.pin = data.pin;
+            socket.emit('admin-action-msg', 'युझरचा पासवर्ड आणि पिन बदलला.');
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+    });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+  
