@@ -1,5 +1,5 @@
 const express = require('express');
-const http = require('http');
+const http = http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 
@@ -21,7 +21,7 @@ let timerVal = 60;
 let manualWinner = null;
 let currentBets = {};
 let users = [
-  { id: 'PP00257374', name: 'Demo User', points: 5000, isBlocked: false }
+  { id: 'PP00257374', name: 'Demo User', pass: '1234', pin: '1234', points: 5000, isBlocked: false }
 ];
 
 // Initialize Bets
@@ -46,7 +46,7 @@ io.on('connection', (socket) => {
     if (data.id === ADMIN_DETAILS.id && data.pass === ADMIN_DETAILS.pass && data.pin === ADMIN_DETAILS.pin) {
       socket.emit('admin-login-response', { success: true });
     } else {
-      socket.emit('admin-login-response', { success: false, message: 'चुकीचो ID, Password किंवा PIN!' });
+      socket.emit('admin-login-response', { success: false, message: 'चुकीचा ID, Password किंवा PIN!' });
     }
   });
 
@@ -59,16 +59,35 @@ io.on('connection', (socket) => {
   // Force Winner
   socket.on('admin-set-winner', (symbol) => {
     manualWinner = symbol;
-    socket.emit('admin-action-msg', `फुडलो विजेता सेट केलो: ${symbol}`);
+    socket.emit('admin-action-msg', `पुढील विजेता सेट केला: ${symbol}`);
   });
 
   // Create User
   socket.on('admin-create-user', (data) => {
     const newId = 'PP00' + Math.floor(100000 + Math.random() * 900000);
-    const newUser = { id: newId, name: data.name, points: 0, isBlocked: false };
+    const newUser = { 
+      id: newId, 
+      name: data.name, 
+      pass: data.pass, 
+      pin: data.pin, 
+      points: 0, 
+      isBlocked: false 
+    };
     users.push(newUser);
     io.emit('users-list-update', users);
-    socket.emit('admin-action-msg', `नवीन युझर तयार जालो! ID: ${newId}`);
+    socket.emit('admin-action-msg', `नवीन युझर तयार झाला! ID: ${newId}`);
+  });
+
+  // Change User Password/PIN
+  socket.on('admin-change-user-creds', (data) => {
+    let u = users.find(user => user.id === data.userId);
+    if (u) {
+      u.pass = data.pass;
+      u.pin = data.pin;
+      socket.emit('admin-action-msg', 'युझरचा पासवर्ड आणि पिन बदलला!');
+    } else {
+      socket.emit('admin-action-msg', 'युझर सापडला नाही!');
+    }
   });
 
   // Point Transfer/Receive
@@ -80,7 +99,7 @@ io.on('connection', (socket) => {
       io.emit('users-list-update', users);
       socket.emit('admin-action-msg', 'पॉइंट्स अपडेट झाले!');
     } else {
-      socket.emit('admin-action-msg', 'युझर मेळूंक ना!');
+      socket.emit('admin-action-msg', 'युझर सापडला नाही!');
     }
   });
 
@@ -97,7 +116,7 @@ io.on('connection', (socket) => {
   socket.on('admin-delete-user', (userId) => {
     users = users.filter(u => u.id !== userId);
     io.emit('users-list-update', users);
-    socket.emit('admin-action-msg', 'युझर डिलीट केलो!');
+    socket.emit('admin-action-msg', 'युझर डिलीट केला!');
   });
 
 });
