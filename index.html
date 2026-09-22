@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pappu Playing Picture - Live Game</title>
+  
+  <!-- CSS link -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Socket.io link -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+  <div class="wheel-overlay" id="overlay"></div>
+
+  <div class="game-container">
+    <div class="game-title-3d">Pappu Playing Picture</div>
+
+    <div class="top-bar">
+      <div class="header-group">
+        <div class="info-box">
+          <span class="info-title">POINTS</span>
+          <span id="pts" class="info-val val-yellow">4150</span>
+        </div>
+        <div class="info-box">
+          <span class="info-title">TIME</span>
+          <span id="timer" class="info-val val-red">60</span>
+        </div>
+      </div>
+
+      <div class="wheel-container" id="wheel-box">
+        <div class="wheel-pointer"></div>
+        <div class="wheel" id="wheel"></div>
+        <div class="wheel-center" id="wheel-center">🎯</div>
+      </div>
+
+      <div class="header-group">
+        <div class="info-box">
+          <span class="info-title">TOTAL BET</span>
+          <span id="total-bet" class="info-val val-yellow">0</span>
+        </div>
+        <div class="info-box">
+          <span class="info-title">WINNER</span>
+          <span id="winner-val" class="info-val val-green">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARDS GRID -->
+    <div class="cards-grid-full">
+      <div class="card" id="card-chhatri"><span class="card-icon">☂️</span><span class="card-name">छत्री</span><span id="b-chhatri" class="card-badge"></span></div>
+      <div class="card" id="card-ball"><span class="card-icon">⚽</span><span class="card-name">बॉल</span><span id="b-ball" class="card-badge"></span></div>
+      <div class="card" id="card-sun"><span class="card-icon">☀️</span><span class="card-name">सूर्य</span><span id="b-sun" class="card-badge"></span></div>
+      <div class="card" id="card-lamp"><span class="card-icon">🪔</span><span class="card-name">दिवा</span><span id="b-lamp" class="card-badge"></span></div>
+      <div class="card" id="card-cow"><span class="card-icon">🐄</span><span class="card-name">गाय</span><span id="b-cow" class="card-badge"></span></div>
+      <div class="card" id="card-bucket"><span class="card-icon">🪣</span><span class="card-name">बादली</span><span id="b-bucket" class="card-badge"></span></div>
+
+      <div class="card" id="card-kite"><span class="card-icon">🪁</span><span class="card-name">पतंग</span><span id="b-kite" class="card-badge"></span></div>
+      <div class="card" id="card-top"><span class="card-icon">🪀</span><span class="card-name">भोवरा</span><span id="b-top" class="card-badge"></span></div>
+      <div class="card" id="card-flower"><span class="card-icon">🌸</span><span class="card-name">फूल</span><span id="b-flower" class="card-badge"></span></div>
+      <div class="card" id="card-butterfly"><span class="card-icon">🦋</span><span class="card-name">फुलपाखरू</span><span id="b-butterfly" class="card-badge"></span></div>
+      <div class="card" id="card-pigeon"><span class="card-icon">🕊️</span><span class="card-name">कबूतर</span><span id="b-pigeon" class="card-badge"></span></div>
+      <div class="card" id="card-rabbit"><span class="card-icon">🐇</span><span class="card-name">ससा</span><span id="b-rabbit" class="card-badge"></span></div>
+    </div>
+
+    <!-- CHIPS -->
+    <div class="bottom-controls">
+      <div class="chips-row">
+        <div class="chip chip-5 active" onclick="selectChip(5, this)">5</div>
+        <div class="chip chip-10" onclick="selectChip(10, this)">10</div>
+        <div class="chip chip-50" onclick="selectChip(50, this)">50</div>
+        <div class="chip chip-100" onclick="selectChip(100, this)">100</div>
+        <div class="chip chip-500" onclick="selectChip(500, this)">500</div>
+      </div>
+
+      <div class="btns-row">
+        <button class="btn btn-ok" id="btn-ok" onclick="confirmBets()">BET OK</button>
+        <button class="btn btn-take" id="btn-take" onclick="takeWin()">TAKE</button>
+        <button class="btn btn-cancel" id="btn-cancel" onclick="cancelBets()">CANCEL</button>
+        <button class="btn btn-fs" onclick="toggleFullScreen()">⛶</button>
+      </div>
+    </div>
+
+    <div class="history-bar">
+      <span>LAST 10:</span>
+      <div id="hist-list" style="display:flex; gap:6px;"></div>
+    </div>
+  </div>
+
+  <!-- JavaScript file link -->
+  <script src="script.js"></script>
+</body>
+            </html>
+              
