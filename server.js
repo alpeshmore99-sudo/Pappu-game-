@@ -223,10 +223,16 @@ app.get('/', (req, res) => {
       btn.classList.add('selected');
     }
     function placeBet(key) {
-      if (isBettingClosed) return;
-      if (userPoints < selectedChip) return;
+      if (isBettingClosed) { alert('शेवटच्या १० सेकंदात बेट लावणं बंद आहे!'); return; }
+      if (userPoints < selectedChip) { alert('पुरा पॉईंट्स नाहीत!'); return; }
+
+      // Live deduction from user points
+      userPoints -= selectedChip;
+      document.getElementById('user-points').innerText = userPoints;
+
       if (!userBets[key]) userBets[key] = 0;
       userBets[key] += selectedChip;
+      
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
       document.getElementById('total-bet').innerText = total;
       renderGrid();
@@ -234,7 +240,7 @@ app.get('/', (req, res) => {
     function clearBets() {
       if (isBettingClosed) return;
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
-      userPoints += total;
+      userPoints += total; // Refund live deducted points
       userBets = {};
       document.getElementById('user-points').innerText = userPoints;
       document.getElementById('total-bet').innerText = '0';
@@ -242,14 +248,12 @@ app.get('/', (req, res) => {
     }
     function submitBets() {
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
-      if (total === 0) return;
-      if (userPoints < total) return;
-      userPoints -= total;
-      document.getElementById('user-points').innerText = userPoints;
+      if (total === 0) { alert('कृपया आधी बेट लावा!'); return; }
       committedBets = {...userBets};
       userBets = {};
       document.getElementById('total-bet').innerText = '0';
       renderGrid();
+      alert('बेट यशस्वीरीत्या लॉक झाली!');
     }
     function takeWinnings() {
       if (wonAmount > 0) {
@@ -257,10 +261,19 @@ app.get('/', (req, res) => {
         document.getElementById('user-points').innerText = userPoints;
         document.getElementById('last-winner').innerText = '0';
         wonAmount = 0;
+        
         let takeBtn = document.getElementById('btn-take');
         takeBtn.disabled = true;
         takeBtn.classList.remove('flashing');
+        
+        // Clean screen
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
+        userBets = {};
+        committedBets = {};
+        document.getElementById('total-bet').innerText = '0';
+        renderGrid();
+        
+        alert('पॉइंट्स यशस्वीपणे जमा झाले व स्क्रीन क्लिन झाली!');
       }
     }
     socket.on('timer-update', function(data) {
@@ -269,15 +282,6 @@ app.get('/', (req, res) => {
       if (time <= 10) {
         isBettingClosed = true;
         document.getElementById('main-wheel').classList.add('spinning');
-        let total = Object.values(userBets).reduce((a, b) => a + b, 0);
-        if (total > 0 && userPoints >= total) {
-          userPoints -= total;
-          document.getElementById('user-points').innerText = userPoints;
-          committedBets = {...userBets};
-          userBets = {};
-          document.getElementById('total-bet').innerText = '0';
-          renderGrid();
-        }
       } else {
         isBettingClosed = false;
         document.getElementById('main-wheel').classList.remove('spinning');
@@ -287,9 +291,11 @@ app.get('/', (req, res) => {
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
         let winBox = document.getElementById('box-' + randomSymbol.key);
         if (winBox) winBox.classList.add('winner-flash');
+        
         wonAmount = (committedBets[randomSymbol.key] || 0) * 10;
         committedBets = {};
         document.getElementById('last-winner').innerText = wonAmount;
+        
         if (wonAmount > 0) {
           let takeBtn = document.getElementById('btn-take');
           takeBtn.disabled = false;
@@ -309,7 +315,7 @@ io.on('connection', (socket) => {
     const timerInterval = setInterval(() => {
         timeLeft--;
         if (timeLeft <= 0) { timeLeft = 60; }
-        io.io.emit('timer-update', { time: timeLeft }); // small fix: io.emit
+        io.emit('timer-update', { time: timeLeft });
     }, 1000);
     socket.on('disconnect', () => { clearInterval(timerInterval); });
 });
