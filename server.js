@@ -74,7 +74,6 @@ app.get('/', (req, res) => {
       border-bottom: 10px solid #ef4444; z-index: 15;
     }
 
-    /* Symbols Grid & Popup Zoom Effect */
     .symbols-grid {
       display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(2, 1fr);
       gap: 8px; margin-top: 30px; position: relative; transition: all 0.3s ease;
@@ -261,7 +260,6 @@ app.get('/', (req, res) => {
       if (isBettingClosed) return;
       if (userPoints < selectedChip) return;
 
-      // Popup active effect when betting
       document.getElementById('symbols-grid').classList.add('popup-active');
 
       userPoints -= selectedChip;
@@ -274,7 +272,6 @@ app.get('/', (req, res) => {
       renderGrid();
     }
 
-    // Touch and Hold multiplier logic
     function startHold(key) {
       if (isBettingClosed) { alert('शेवटच्या १० सेकंदात बेट लावणे बंद आहे!'); return; }
       addSingleBet(key);
@@ -308,7 +305,6 @@ app.get('/', (req, res) => {
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
       if (total === 0) { alert('कृपया आधी बेट लावा!'); return; }
       
-      // Merge into committed bets
       for (let k in userBets) {
         committedBets[k] = (committedBets[k] || 0) + userBets[k];
       }
@@ -329,7 +325,6 @@ app.get('/', (req, res) => {
         takeBtn.disabled = true;
         takeBtn.classList.remove('flashing');
         
-        // Clean screen completely
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
         document.getElementById('symbols-grid').classList.remove('popup-active');
         document.getElementById('wheel-center-icon').innerText = '🎯';
@@ -346,7 +341,6 @@ app.get('/', (req, res) => {
       
       if (time <= 10) {
         isBettingClosed = true;
-        // Remove popup when betting time ends
         document.getElementById('symbols-grid').classList.remove('popup-active');
         document.getElementById('main-wheel').classList.add('spinning');
       } else {
@@ -371,10 +365,8 @@ app.get('/', (req, res) => {
           takeBtn.disabled = false;
           takeBtn.classList.add('flashing');
         } else {
-          // Disable take button immediately if no win
           takeBtn.disabled = true;
           takeBtn.classList.remove('flashing');
-          // If no win, auto clear screen after 2 seconds
           setTimeout(() => {
             if (wonAmount === 0 && document.getElementById('user-timer').innerText < 50) {
               document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
@@ -386,7 +378,6 @@ app.get('/', (req, res) => {
         committedBets = {};
       }
 
-      // Reset screen at new round start (60 seconds)
       if (time === 60) {
         wonAmount = 0;
         document.getElementById('last-winner').innerText = '0';
