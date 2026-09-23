@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
     .dash-card-title { font-size: 16px; font-weight: bold; color: #f8fafc; }
     #game-screen { justify-content: center; align-items: center; background: #030712; }
     .game-wrapper {
-      width: 950px; height: 480px;
+      width: 950px; height: 490px;
       background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
       border: 3px solid #d97706; border-radius: 12px;
       display: flex; flex-direction: column; justify-content: space-between;
@@ -56,18 +56,26 @@ app.get('/', (req, res) => {
     .stat-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; }
     .stat-val { font-size: 16px; font-weight: bold; color: #facc15; }
     .stat-val.time { color: #f87171; }
+    
+    /* Wheel styling with 12 miniature symbols */
     .wheel-container {
-      position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
-      width: 65px; height: 65px; background: radial-gradient(circle, #fbbf24 0%, #b45309 100%);
+      position: absolute; top: 48px; left: 50%; transform: translateX(-50%);
+      width: 75px; height: 75px; background: radial-gradient(circle, #fbbf24 0%, #b45309 100%);
       border: 3px solid #facc15; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-      box-shadow: 0 0 20px rgba(250, 204, 21, 0.9); z-index: 10; transition: 0.3s;
+      box-shadow: 0 0 20px rgba(250, 204, 21, 0.9); z-index: 10;
     }
-    .wheel-container.spinning { animation: spinWheel 0.8s linear infinite; }
+    .wheel-container.spinning { animation: spinWheel 0.6s linear infinite; }
     @keyframes spinWheel { 0% { transform: translateX(-50%) rotate(0deg); } 100% { transform: translateX(-50%) rotate(360deg); } }
-    .wheel-inner { font-size: 28px; }
+    .wheel-inner { font-size: 32px; position: relative; display: flex; justify-content: center; align-items: center; }
+    .wheel-pointer {
+      position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
+      border-bottom: 10px solid #ef4444; z-index: 15;
+    }
+
     .symbols-grid {
       display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(2, 1fr);
-      gap: 6px; margin-top: 25px; position: relative;
+      gap: 6px; margin-top: 30px; position: relative;
     }
     .symbol-box {
       background: linear-gradient(to bottom, #1e293b, #0f172a); border: 2px solid #3b82f6;
@@ -82,7 +90,7 @@ app.get('/', (req, res) => {
     .symbol-title { font-size: 11px; font-weight: bold; color: #e2e8f0; }
     .symbol-bet-amt {
       background: #ef4444; color: #fff; font-size: 10px; font-weight: bold;
-      border-radius: 8px; padding: 1px 5px; display: inline-block; margin-top: 2px;
+      border-radius: 8px; padding: 1px 6px; display: inline-block; margin-top: 2px;
     }
     .footer-bar {
       display: flex; justify-content: space-between; align-items: center;
@@ -151,7 +159,10 @@ app.get('/', (req, res) => {
           <div class="stat-item"><div class="stat-label">विजेता</div><div class="stat-val" id="last-winner">0</div></div>
         </div>
       </div>
-      <div class="wheel-container" id="main-wheel"><div class="wheel-inner">🎯</div></div>
+      <div class="wheel-container" id="main-wheel">
+        <div class="wheel-pointer"></div>
+        <div class="wheel-inner" id="wheel-center-icon">🎯</div>
+      </div>
       <div class="symbols-grid" id="symbols-grid"></div>
       <div class="footer-bar">
         <div class="chips-row">
@@ -177,6 +188,7 @@ app.get('/', (req, res) => {
     var userPoints = 5000;
     var wonAmount = 0;
     var isBettingClosed = false;
+    var holdInterval = null;
 
     const SYMBOLS = [
       { key: 'chhatri', name: 'छत्री', icon: '🌂' },
@@ -214,7 +226,13 @@ app.get('/', (req, res) => {
       grid.innerHTML = '';
       SYMBOLS.forEach(s => {
         var currentBet = userBets[s.key] || 0;
-        grid.innerHTML += \`<div class="symbol-box" id="box-\${s.key}" onclick="placeBet('\${s.key}')"><div class="symbol-icon">\${s.icon}</div><div class="symbol-title">\${s.name}</div><div class="symbol-bet-amt" id="bet-\${s.key}" style="display: \${currentBet ? 'inline-block' : 'none'};">\${currentBet}</div></div>\`;
+        grid.innerHTML += \`<div class="symbol-box" id="box-\${s.key}" 
+          onmousedown="startHold('\${s.key}')" onmouseup="stopHold()" onmouseleave="stopHold()"
+          onttouchstart="startHold('\${s.key}')" ontouchend="stopHold()">
+          <div class="symbol-icon">\${s.icon}</div>
+          <div class="symbol-title">\${s.name}</div>
+          <div class="symbol-bet-amt" id="bet-\${s.key}" style="display: \${currentBet ? 'inline-block' : 'none'};">\${currentBet}</div>
+        </div>\`;
       });
     }
     function selectChip(amount, btn) {
@@ -222,25 +240,42 @@ app.get('/', (req, res) => {
       document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
     }
-    function placeBet(key) {
-      if (isBettingClosed) { alert('शेवटच्या १० सेकंदात बेट लावणं बंद आहे!'); return; }
-      if (userPoints < selectedChip) { alert('पुरा पॉईंट्स नाहीत!'); return; }
 
-      // Live deduction from user points
+    function addSingleBet(key) {
+      if (isBettingClosed) return;
+      if (userPoints < selectedChip) return;
       userPoints -= selectedChip;
       document.getElementById('user-points').innerText = userPoints;
-
       if (!userBets[key]) userBets[key] = 0;
       userBets[key] += selectedChip;
-      
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
       document.getElementById('total-bet').innerText = total;
       renderGrid();
     }
+
+    // Touch and Hold multiplier logic
+    function startHold(key) {
+      if (isBettingClosed) { alert('शेवटच्या १० सेकंदात बेट लावणे बंद आहे!'); return; }
+      addSingleBet(key);
+      holdInterval = setInterval(() => {
+        if (userPoints >= selectedChip) {
+          addSingleBet(key);
+        } else {
+          stopHold();
+        }
+      }, 150); // Speed of multiplier when held down
+    }
+    function stopHold() {
+      if (holdInterval) {
+        clearInterval(holdInterval);
+        holdInterval = null;
+      }
+    }
+
     function clearBets() {
       if (isBettingClosed) return;
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
-      userPoints += total; // Refund live deducted points
+      userPoints += total;
       userBets = {};
       document.getElementById('user-points').innerText = userPoints;
       document.getElementById('total-bet').innerText = '0';
@@ -266,19 +301,20 @@ app.get('/', (req, res) => {
         takeBtn.disabled = true;
         takeBtn.classList.remove('flashing');
         
-        // Clean screen
+        // Clean screen completely on take
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
+        document.getElementById('wheel-center-icon').innerText = '🎯';
         userBets = {};
         committedBets = {};
         document.getElementById('total-bet').innerText = '0';
         renderGrid();
-        
-        alert('पॉइंट्स यशस्वीपणे जमा झाले व स्क्रीन क्लिन झाली!');
       }
     }
+
     socket.on('timer-update', function(data) {
       let time = data.time;
       document.getElementById('user-timer').innerText = time;
+      
       if (time <= 10) {
         isBettingClosed = true;
         document.getElementById('main-wheel').classList.add('spinning');
@@ -286,23 +322,47 @@ app.get('/', (req, res) => {
         isBettingClosed = false;
         document.getElementById('main-wheel').classList.remove('spinning');
       }
+
       if (time === 5) {
         let randomSymbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        document.getElementById('main-wheel').classList.remove('spinning');
+        document.getElementById('wheel-center-icon').innerText = randomSymbol.icon; // Show winner symbol inside wheel
+
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
         let winBox = document.getElementById('box-' + randomSymbol.key);
         if (winBox) winBox.classList.add('winner-flash');
         
         wonAmount = (committedBets[randomSymbol.key] || 0) * 10;
-        committedBets = {};
         document.getElementById('last-winner').innerText = wonAmount;
         
+        let takeBtn = document.getElementById('btn-take');
         if (wonAmount > 0) {
-          let takeBtn = document.getElementById('btn-take');
           takeBtn.disabled = false;
           takeBtn.classList.add('flashing');
+        } else {
+          // If no win (zero amount), disable take button immediately after result
+          takeBtn.disabled = true;
+          takeBtn.classList.remove('flashing');
         }
+        committedBets = {};
+      }
+
+      // Reset screen when a new round starts (at 60 seconds)
+      if (time === 60) {
+        wonAmount = 0;
+        document.getElementById('last-winner').innerText = '0';
+        let takeBtn = document.getElementById('btn-take');
+        takeBtn.disabled = true;
+        takeBtn.classList.remove('flashing');
+        document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
+        document.getElementById('wheel-center-icon').innerText = '🎯';
+        userBets = {};
+        committedBets = {};
+        document.getElementById('total-bet').innerText = '0';
+        renderGrid();
       }
     });
+
     renderGrid();
   </script>
 </body>
@@ -324,3 +384,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
 });
+        
