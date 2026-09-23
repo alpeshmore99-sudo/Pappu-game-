@@ -7,8 +7,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 app.get('/', (req, res) => {
-    res.send(`
-<!DOCTYPE html>
+    res.send(`<!DOCTYPE html>
 <html lang="mr">
 <head>
   <meta charset="UTF-8">
@@ -23,19 +22,13 @@ app.get('/', (req, res) => {
       overflow: hidden; width: 100vw; height: 100vh;
       display: flex; justify-content: center; align-items: center;
     }
-
-    /* Screen Management */
     .screen { display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; background: #030712; }
     .screen.active { display: flex; }
-
-    /* Login Screen */
     #login-screen { justify-content: center; align-items: center; flex-direction: column; background: radial-gradient(circle, #1e293b 0%, #030712 100%); }
     .login-box { background: #0f172a; border: 2px solid #d97706; padding: 30px; border-radius: 12px; text-align: center; width: 320px; box-shadow: 0 0 25px rgba(217,119,6,0.5); }
     .login-box h2 { color: #facc15; margin-bottom: 20px; font-size: 22px; }
     .login-input { width: 100%; padding: 10px; margin-bottom: 15px; background: #1e293b; border: 1px solid #475569; color: #fff; border-radius: 6px; font-size: 14px; text-align: center; }
     .login-btn { width: 100%; padding: 10px; background: #2563eb; color: #fff; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
-
-    /* Dashboard Screen */
     #dashboard-screen { flex-direction: column; padding: 20px; background: #0b0f19; }
     .dash-header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px 25px; border-radius: 10px; border: 1px solid #334155; }
     .dash-title { color: #facc15; font-size: 20px; font-weight: bold; }
@@ -45,8 +38,6 @@ app.get('/', (req, res) => {
     .dash-card:hover { border-color: #facc15; background: #1f2937; transform: translateY(-3px); }
     .dash-card-icon { font-size: 40px; margin-bottom: 10px; }
     .dash-card-title { font-size: 16px; font-weight: bold; color: #f8fafc; }
-
-    /* Game Screen (Landscape Forced & Centered) */
     #game-screen { justify-content: center; align-items: center; background: #030712; }
     .game-wrapper {
       width: 950px; height: 480px;
@@ -65,8 +56,6 @@ app.get('/', (req, res) => {
     .stat-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; }
     .stat-val { font-size: 16px; font-weight: bold; color: #facc15; }
     .stat-val.time { color: #f87171; }
-
-    /* Improved 3D Wheel Area */
     .wheel-container {
       position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
       width: 65px; height: 65px; background: radial-gradient(circle, #fbbf24 0%, #b45309 100%);
@@ -76,8 +65,6 @@ app.get('/', (req, res) => {
     .wheel-container.spinning { animation: spinWheel 0.8s linear infinite; }
     @keyframes spinWheel { 0% { transform: translateX(-50%) rotate(0deg); } 100% { transform: translateX(-50%) rotate(360deg); } }
     .wheel-inner { font-size: 28px; }
-
-    /* Symbols Grid */
     .symbols-grid {
       display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(2, 1fr);
       gap: 6px; margin-top: 25px; position: relative;
@@ -97,8 +84,6 @@ app.get('/', (req, res) => {
       background: #ef4444; color: #fff; font-size: 10px; font-weight: bold;
       border-radius: 8px; padding: 1px 5px; display: inline-block; margin-top: 2px;
     }
-
-    /* Footer Bar */
     .footer-bar {
       display: flex; justify-content: space-between; align-items: center;
       background: #0f172a; padding: 6px 10px; border-radius: 8px; border: 1px solid #334155;
@@ -114,7 +99,6 @@ app.get('/', (req, res) => {
     .chip-btn:nth-child(4) { background: #f59e0b; color: #fff; }
     .chip-btn:nth-child(5) { background: #ef4444; color: #fff; }
     .chip-btn.selected { border: 3px solid #facc15; transform: scale(1.15); box-shadow: 0 0 12px #facc15; }
-
     .action-buttons { display: flex; gap: 8px; }
     .action-btn { padding: 6px 16px; border-radius: 6px; font-weight: bold; font-size: 12px; border: none; cursor: pointer; color: white; text-transform: uppercase; }
     .btn-ok { background: #2563eb; }
@@ -123,89 +107,52 @@ app.get('/', (req, res) => {
     @keyframes takeFlash { 0% { background: #059669; box-shadow: 0 0 5px #22c55e; } 100% { background: #16a34a; box-shadow: 0 0 20px #22c55e; transform: scale(1.05); } }
     .btn-cancel { background: #dc2626; }
     .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* Popup Overlay for Big Symbol View */
-    #symbol-popup {
-      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(3, 7, 18, 0.85); justify-content: center; align-items: center; z-index: 100; flex-direction: column;
-    }
-    .big-popup-box {
-      background: linear-gradient(135deg, #1e293b, #0f172a); border: 4px solid #facc15;
-      padding: 30px 50px; border-radius: 20px; text-align: center; box-shadow: 0 0 40px rgba(250,204,21,0.8);
-      animation: popIn 0.3s cubic-bezier(0.1, 0.7, 0.1, 1);
-    }
-    @keyframes popIn { 0% { transform: scale(0.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    .big-popup-icon { font-size: 80px; margin-bottom: 10px; }
-    .big-popup-name { font-size: 24px; color: #facc15; font-weight: bold; }
-
-    /* Result Overlay Modal */
-    #result-modal {
-      display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(3, 7, 18, 0.9); justify-content: center; align-items: center; z-index: 90; flex-direction: column;
-    }
-    .popup-wheel-box {
-      width: 110px; height: 110px; border: 4px solid #facc15; border-radius: 50%;
-      background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
-      display: flex; justify-content: center; align-items: center; font-size: 55px;
-      animation: popupSpin 1.2s cubic-bezier(0.1, 0.7, 0.1, 1) infinite; margin-bottom: 15px;
-    }
-    @keyframes popupSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .popup-winner-title { color: #facc15; font-size: 20px; font-weight: bold; }
   </style>
 </head>
 <body>
-
-  <!-- 1. LOGIN SCREEN -->
   <div id="login-screen" class="screen active">
     <div class="login-box">
-      <h2>Pappu Login</h2>
-      <input type="text" id="username-input" class="login-input" placeholder="तुमचे नाव टाका">
+      <h2>पप्पु लॉगिन</h2>
+      <input type="text" id="username-input" class="login-input" placeholder="नाव टाका">
       <input type="password" id="password-input" class="login-input" placeholder="पासवर्ड टाका">
-      <button class="login-btn" onclick="loginUser()">प्रवेश करा (Login)</button>
+      <button class="login-btn" onclick="loginUser()">प्रवेश करा</button>
     </div>
   </div>
-
-  <!-- 2. DASHBOARD SCREEN -->
   <div id="dashboard-screen" class="screen">
     <div class="dash-header">
       <div class="dash-title" id="welcome-user">स्वागत आहे!</div>
-      <div class="dash-points">Points: <span id="dash-points-val">5000</span></div>
+      <div class="dash-points">पॉइंट्स: <span id="dash-points-val">5000</span></div>
     </div>
     <div class="dash-body">
-      <div class="dash-card" onclick="openReceiveModal()">
+      <div class="dash-card" onclick="alert('कमिंग सून')">
         <div class="dash-card-icon">📥</div>
-        <div class="dash-card-title">Points Receive</div>
+        <div class="dash-card-title">पॉइंट्स रिसीव्ह</div>
       </div>
-      <div class="dash-card" onclick="openTransferModal()">
+      <div class="dash-card" onclick="alert('कमिंग सून')">
         <div class="dash-card-icon">📤</div>
-        <div class="dash-card-title">Points Transfer</div>
+        <div class="dash-card-title">पॉइंट्स ट्रान्सफर</div>
       </div>
       <div class="dash-card" onclick="goToGame()">
         <div class="dash-card-icon">🎰</div>
-        <div class="dash-card-title">Pappu Casino Game</div>
+        <div class="dash-card-title">कॅसिनो गेम खेळा</div>
       </div>
     </div>
   </div>
-
-  <!-- 3. GAME SCREEN -->
   <div id="game-screen" class="screen">
     <div class="game-wrapper">
       <div class="header-top">
         <div class="stat-group">
-          <div class="stat-item"><div class="stat-label">Points</div><div class="stat-val" id="user-points">5000</div></div>
-          <div class="stat-item"><div class="stat-label">Time</div><div class="stat-val time" id="user-timer">60</div></div>
+          <div class="stat-item"><div class="stat-label">पॉइंट्स</div><div class="stat-val" id="user-points">5000</div></div>
+          <div class="stat-item"><div class="stat-label">वेळ</div><div class="stat-val time" id="user-timer">60</div></div>
         </div>
-        <div class="game-title" onclick="goToDashboard()">⬅ Pappu Game Menu</div>
+        <div class="game-title" onclick="goToDashboard()">⬅ डॅशबोर्डवर जा</div>
         <div class="stat-group">
-          <div class="stat-item"><div class="stat-label">Total Bet</div><div class="stat-val" id="total-bet">0</div></div>
-          <div class="stat-item"><div class="stat-label">Winner</div><div class="stat-val" id="last-winner">0</div></div>
+          <div class="stat-item"><div class="stat-label">एकूण बेट</div><div class="stat-val" id="total-bet">0</div></div>
+          <div class="stat-item"><div class="stat-label">विजेता</div><div class="stat-val" id="last-winner">0</div></div>
         </div>
       </div>
-
       <div class="wheel-container" id="main-wheel"><div class="wheel-inner">🎯</div></div>
-
       <div class="symbols-grid" id="symbols-grid"></div>
-
       <div class="footer-bar">
         <div class="chips-row">
           <button class="chip-btn selected" onclick="selectChip(5, this)">5</button>
@@ -215,28 +162,13 @@ app.get('/', (req, res) => {
           <button class="chip-btn" onclick="selectChip(500, this)">500</button>
         </div>
         <div class="action-buttons">
-          <button class="action-btn btn-ok" id="btn-ok" onclick="submitBets()">Bet OK</button>
-          <button class="action-btn btn-take" id="btn-take" onclick="takeWinnings()" disabled>Take</button>
-          <button class="action-btn btn-cancel" id="btn-cancel" onclick="clearBets()">Cancel</button>
+          <button class="action-btn btn-ok" onclick="submitBets()">बेट ओके</button>
+          <button class="action-btn btn-take" id="btn-take" onclick="takeWinnings()" disabled>टेक</button>
+          <button class="action-btn btn-cancel" onclick="clearBets()">रद्द करा</button>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- BIG POPUP ON BETTING -->
-  <div id="symbol-popup">
-    <div class="big-popup-box">
-      <div class="big-popup-icon" id="popup-sym-icon"></div>
-      <div class="big-popup-name" id="popup-sym-name"></div>
-    </div>
-  </div>
-
-  <!-- RESULT MODAL -->
-  <div id="result-modal">
-    <div class="popup-wheel-box" id="popup-emoji">🎯</div>
-    <div class="popup-winner-title" id="popup-text">निकाल जाहीर होत आहे...</div>
-  </div>
-
   <script>
     var socket = io();
     var selectedChip = 5;
@@ -263,75 +195,44 @@ app.get('/', (req, res) => {
 
     function loginUser() {
       let name = document.getElementById('username-input').value;
-      if (!name) { alert('कृपया नाव टाка!'); return; }
-      document.getElementById('welcome-user').innerText = 'स्वागत आहे, ' + name + '!';
-      switchScreen('dashboard-screen');
+      if (!name) { alert('नाव टाका'); return; }
+      document.getElementById('welcome-user').innerText = 'स्वागत आहे, ' + name;
+      document.getElementById('login-screen').classList.remove('active');
+      document.getElementById('dashboard-screen').classList.add('active');
     }
-
-    function switchScreen(screenId) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(screenId).classList.add('active');
+    function goToGame() {
+      document.getElementById('dashboard-screen').classList.remove('active');
+      document.getElementById('game-screen').classList.add('active');
+      renderGrid();
     }
-
-    function goToGame() { switchScreen('game-screen'); renderGrid(); }
-    function goToDashboard() { switchScreen('dashboard-screen'); }
-    function openReceiveModal() { alert('Points Receive करण्याची सुविधा लवकरच चालू होईल.'); }
-    function openTransferModal() { alert('Points Transfer करण्याची सुविधा लवकरच चालू होईल.'); }
-
+    function goToDashboard() {
+      document.getElementById('game-screen').classList.remove('active');
+      document.getElementById('dashboard-screen').classList.add('active');
+    }
     function renderGrid() {
       var grid = document.getElementById('symbols-grid');
       grid.innerHTML = '';
       SYMBOLS.forEach(s => {
         var currentBet = userBets[s.key] || 0;
-        grid.innerHTML += `
-          <div class="symbol-box" id="box-\${s.key}" onclick="placeBet('\${s.key}', '\${s.name}', '\${s.icon}')">
-            <div class="symbol-icon">\${s.icon}</div>
-            <div class="symbol-title">\${s.name}</div>
-            <div class="symbol-bet-amt" id="bet-\${s.key}" style="display: \${currentBet ? 'inline-block' : 'none'};">\${currentBet}</div>
-          </div>
-        `;
+        grid.innerHTML += \`<div class="symbol-box" id="box-\${s.key}" onclick="placeBet('\${s.key}')"><div class="symbol-icon">\${s.icon}</div><div class="symbol-title">\${s.name}</div><div class="symbol-bet-amt" id="bet-\${s.key}" style="display: \${currentBet ? 'inline-block' : 'none'};">\${currentBet}</div></div>\`;
       });
     }
-
     function selectChip(amount, btn) {
       selectedChip = amount;
       document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
     }
-
-    function placeBet(key, name, icon) {
-      if (isBettingClosed) { alert('शेवटच्या १० सेकंदात बेट लावणं बंद आहे!'); return; }
-      if (userPoints < selectedChip) { alert('पुरा पॉईंट्स नाहीत!'); return; }
-
-      // Popup big symbol view & disable wheel temporarily
-      showSymbolPopup(icon, name);
-
+    function placeBet(key) {
+      if (isBettingClosed) return;
+      if (userPoints < selectedChip) return;
       if (!userBets[key]) userBets[key] = 0;
       userBets[key] += selectedChip;
-      
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
       document.getElementById('total-bet').innerText = total;
       renderGrid();
     }
-
-    function showSymbolPopup(icon, name) {
-      let popup = document.getElementById('symbol-popup');
-      document.getElementById('popup-sym-icon').innerText = icon;
-      document.getElementById('popup-sym-name').innerText = name;
-      popup.style.display = 'flex';
-      
-      // Disable wheel rotation/interaction temporarily
-      document.getElementById('main-wheel').style.pointerEvents = 'none';
-
-      setTimeout(() => {
-        popup.style.display = 'none';
-        document.getElementById('main-wheel').style.pointerEvents = 'auto';
-      }, 600);
-    }
-
     function clearBets() {
       if (isBettingClosed) return;
-      // Refund points if cleared before OK
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
       userPoints += total;
       userBets = {};
@@ -339,22 +240,17 @@ app.get('/', (req, res) => {
       document.getElementById('total-bet').innerText = '0';
       renderGrid();
     }
-
     function submitBets() {
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
-      if (total === 0) { alert('कृपया आधी बेट लावा!'); return; }
-      
-      if (userPoints < total) { alert('पुरा पॉईंट्स नाहीत!'); return; }
-      
-      userPoints -= total; // Deduct from main score points
+      if (total === 0) return;
+      if (userPoints < total) return;
+      userPoints -= total;
       document.getElementById('user-points').innerText = userPoints;
       committedBets = {...userBets};
       userBets = {};
       document.getElementById('total-bet').innerText = '0';
       renderGrid();
-      alert('बेट यशस्वीरीत्या स्वीकारली गेली!');
     }
-
     function takeWinnings() {
       if (wonAmount > 0) {
         userPoints += wonAmount;
@@ -365,20 +261,14 @@ app.get('/', (req, res) => {
         takeBtn.disabled = true;
         takeBtn.classList.remove('flashing');
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
-        alert('पॉइंट्स यशस्वीपणे जमा झाले!');
       }
     }
-
-    // Socket Timer Listener (60 seconds cycle, last 10 secs waiting)
     socket.on('timer-update', function(data) {
       let time = data.time;
       document.getElementById('user-timer').innerText = time;
-
       if (time <= 10) {
         isBettingClosed = true;
         document.getElementById('main-wheel').classList.add('spinning');
-        
-        // Auto submit if uncommitted bets exist
         let total = Object.values(userBets).reduce((a, b) => a + b, 0);
         if (total > 0 && userPoints >= total) {
           userPoints -= total;
@@ -392,55 +282,39 @@ app.get('/', (req, res) => {
         isBettingClosed = false;
         document.getElementById('main-wheel').classList.remove('spinning');
       }
-
       if (time === 5) {
         let randomSymbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-        let modal = document.getElementById('result-modal');
-        document.getElementById('popup-emoji').innerText = randomSymbol.icon;
-        document.getElementById('popup-text').innerText = 'विजेता: ' + randomSymbol.name;
-        modal.style.display = 'flex';
-
-        setTimeout(() => {
-          modal.style.display = 'none';
-          document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
-          let winBox = document.getElementById('box-' + randomSymbol.key);
-          if (winBox) winBox.classList.add('winner-flash');
-
-          // Calculate winnings based on committed bets
-          wonAmount = (committedBets[randomSymbol.key] || 0) * 10;
-          committedBets = {};
-          document.getElementById('last-winner').innerText = wonAmount;
-
-          if (wonAmount > 0) {
-            let takeBtn = document.getElementById('btn-take');
-            takeBtn.disabled = false;
-            takeBtn.classList.add('flashing'); // Flash take button
-          }
-        }, 3000);
+        document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
+        let winBox = document.getElementById('box-' + randomSymbol.key);
+        if (winBox) winBox.classList.add('winner-flash');
+        wonAmount = (committedBets[randomSymbol.key] || 0) * 10;
+        committedBets = {};
+        document.getElementById('last-winner').innerText = wonAmount;
+        if (wonAmount > 0) {
+          let takeBtn = document.getElementById('btn-take');
+          takeBtn.disabled = false;
+          takeBtn.classList.add('flashing');
+        }
       }
     });
-
     renderGrid();
   </script>
 </body>
-</html>
-    `);
+</html>`);
 });
 
-// Server Timer Logic (60 seconds countdown)
 io.on('connection', (socket) => {
-    console.log('A user connected');
     let timeLeft = 60;
-    
-    // Send initial timer
     socket.emit('timer-update', { time: timeLeft });
-
     const timerInterval = setInterval(() => {
         timeLeft--;
-        if (timeLeft <= 0) {
-            timeLeft = 60;
-        }
-        io.emit('timer-update', { time: timeLeft });
+        if (timeLeft <= 0) { timeLeft = 60; }
+        io.io.emit('timer-update', { time: timeLeft }); // small fix: io.emit
     }, 1000);
+    socket.on('disconnect', () => { clearInterval(timerInterval); });
+});
 
-    socket
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+});
