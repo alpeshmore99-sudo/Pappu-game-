@@ -6,6 +6,79 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Global state for admin & game control
+let globalPoints = 5000;
+let userList = {};
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Admin Panel Route
+app.get('/admin', (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Pappu Playing</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #030712; color: #f8fafc; font-family: sans-serif; padding: 20px; }
+    .admin-container { max-width: 600px; margin: 0 auto; background: #0f172a; border: 2px solid #d97706; border-radius: 12px; padding: 25px; box-shadow: 0 0 20px rgba(217,119,6,0.4); }
+    h2 { color: #facc15; text-align: center; margin-bottom: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 14px; }
+    input { width: 100%; padding: 10px; background: #1e293b; border: 1px solid #475569; color: #fff; border-radius: 6px; font-size: 16px; }
+    .btn { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
+    .btn:hover { background: #1d4ed8; }
+    .msg { margin-top: 15px; text-align: center; color: #22c55e; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <h2>🛠️ पप्पु गेम - ॲडमिन पनेल</h2>
+    <div class="form-group">
+      <label>वापरकर्त्याचे नाव (Username):</label>
+      <input type="text" id="admin-user" placeholder="नाव टाका">
+    </div>
+    <div class="form-group">
+      <label>पॉइंट्स (Points Set करा):</label>
+      <input type="number" id="admin-points" placeholder="उदा. 10000">
+    </div>
+    <button class="btn" onclick="updateUserPoints()">पॉइंट्स अपडेट करा</button>
+    <div class="msg" id="admin-msg"></div>
+  </div>
+
+  <script>
+    function updateUserPoints() {
+      let username = document.getElementById('admin-user').value;
+      let points = document.getElementById('admin-points').value;
+      if(!username || !points) {
+        alert('कृपया सर्व माहिती भरा!');
+        return;
+      }
+      fetch('/api/update-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, points: Number(points) })
+      }).then(res => res.json()).then(data => {
+        document.getElementById('admin-msg').innerText = 'यशस्वीरित्या अपडेट झाले!';
+        setTimeout(() => document.getElementById('admin-msg').innerText = '', 3000);
+      });
+    }
+  </script>
+</body>
+</html>`);
+});
+
+// API to update points from admin
+app.post('/api/update-points', (req, res) => {
+    const { username, points } = req.body;
+    userList[username] = points;
+    io.emit('points-updated', { username, points });
+    res.json({ success: true });
+});
+
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="mr">
@@ -59,7 +132,7 @@ app.get('/', (req, res) => {
     .stat-val { font-size: 16px; font-weight: bold; color: #facc15; }
     .stat-val.time { color: #f87171; }
     
-    /* Bigger & Clearer 12 Icons Wheel Styling */
+    /* Wheel Container */
     .wheel-container {
       position: absolute; top: 44px; left: 50%; transform: translateX(-50%);
       width: 140px; height: 140px; background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
@@ -209,6 +282,7 @@ app.get('/', (req, res) => {
   </div>
   <script>
     var socket = io();
+    var currentUser = '';
     var selectedChip = 5;
     var userBets = {};
     var committedBets = {};
@@ -249,6 +323,7 @@ app.get('/', (req, res) => {
     function loginUser() {
       let name = document.getElementById('username-input').value;
       if (!name) { alert('नाव टाका'); return; }
+      currentUser = name;
       document.getElementById('welcome-user').innerText = 'स्वागत आहे, ' + name;
       document.getElementById('login-screen').classList.remove('active');
       document.getElementById('dashboard-screen').classList.add('active');
@@ -291,6 +366,7 @@ app.get('/', (req, res) => {
 
       userPoints -= selectedChip;
       document.getElementById('user-points').innerText = userPoints;
+      document.getElementById('dash-points-val').innerText = userPoints;
       if (!userBets[key]) userBets[key] = 0;
       userBets[key] += selectedChip;
       
@@ -324,6 +400,7 @@ app.get('/', (req, res) => {
       userBets = {};
       document.getElementById('symbols-grid').classList.remove('popup-active');
       document.getElementById('user-points').innerText = userPoints;
+      document.getElementById('dash-points-val').innerText = userPoints;
       document.getElementById('total-bet').innerText = '0';
       renderGrid();
     }
@@ -344,6 +421,7 @@ app.get('/', (req, res) => {
       if (wonAmount > 0) {
         userPoints += wonAmount;
         document.getElementById('user-points').innerText = userPoints;
+        document.getElementById('dash-points-val').innerText = userPoints;
         document.getElementById('last-winner').innerText = '0';
         wonAmount = 0;
         
@@ -352,94 +430,4 @@ app.get('/', (req, res) => {
         takeBtn.classList.remove('flashing');
         
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
-        document.getElementById('symbols-grid').classList.remove('popup-active');
-        userBets = {};
-        committedBets = {};
-        document.getElementById('total-bet').innerText = '0';
-        renderGrid();
-      }
-    }
-
-    socket.on('timer-update', function(data) {
-      let time = data.time;
-      document.getElementById('user-timer').innerText = time;
-      
-      if (time === 10) {
-        submitBets();
-      }
-
-      if (time <= 10) {
-        isBettingClosed = true;
-        document.getElementById('symbols-grid').classList.remove('popup-active');
-        document.getElementById('main-wheel').classList.add('spinning');
-      } else {
-        isBettingClosed = false;
-        document.getElementById('main-wheel').classList.remove('spinning');
-      }
-
-      if (time === 5) {
-        let randomSymbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-        document.getElementById('main-wheel').classList.remove('spinning');
-
-        document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
-        let winBox = document.getElementById('box-' + randomSymbol.key);
-        if (winBox) winBox.classList.add('winner-flash');
-        
-        wonAmount = (committedBets[randomSymbol.key] || 0) * 10;
-        document.getElementById('last-winner').innerText = wonAmount;
-        
-        let takeBtn = document.getElementById('btn-take');
-        if (wonAmount > 0) {
-          takeBtn.disabled = false;
-          takeBtn.classList.add('flashing');
-        } else {
-          takeBtn.disabled = true;
-          takeBtn.classList.remove('flashing');
-          setTimeout(() => {
-            if (wonAmount === 0 && document.getElementById('user-timer').innerText < 50) {
-              document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
-              committedBets = {};
-              renderGrid();
-            }
-          }, 2000);
-        }
-        committedBets = {};
-      }
-
-      if (time === 60) {
-        wonAmount = 0;
-        document.getElementById('last-winner').innerText = '0';
-        let takeBtn = document.getElementById('btn-take');
-        takeBtn.disabled = true;
-        takeBtn.classList.remove('flashing');
-        document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
-        document.getElementById('symbols-grid').classList.remove('popup-active');
-        userBets = {};
-        committedBets = {};
-        document.getElementById('total-bet').innerText = '0';
-        renderGrid();
-      }
-    });
-
-    renderGrid();
-    renderWheelIcons();
-  </script>
-</body>
-</html>`);
-});
-
-io.on('connection', (socket) => {
-    let timeLeft = 60;
-    socket.emit('timer-update', { time: timeLeft });
-    const timerInterval = setInterval(() => {
-        timeLeft--;
-        if (timeLeft <= 0) { timeLeft = 60; }
-        io.emit('timer-update', { time: timeLeft });
-    }, 1000);
-    socket.on('disconnect', () => { clearInterval(timerInterval); });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-});
+        document.getElementById(
