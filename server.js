@@ -59,36 +59,36 @@ app.get('/', (req, res) => {
     .stat-val { font-size: 16px; font-weight: bold; color: #facc15; }
     .stat-val.time { color: #f87171; }
     
-    /* 12 Icons Wheel Styling */
+    /* Bigger & Clearer 12 Icons Wheel Styling */
     .wheel-container {
-      position: absolute; top: 45px; left: 50%; transform: translateX(-50%);
-      width: 110px; height: 110px; background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
-      border: 3px solid #facc15; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-      box-shadow: 0 0 20px rgba(250, 204, 21, 0.8); z-index: 10;
+      position: absolute; top: 44px; left: 50%; transform: translateX(-50%);
+      width: 140px; height: 140px; background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+      border: 4px solid #facc15; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+      box-shadow: 0 0 25px rgba(250, 204, 21, 0.9); z-index: 10;
     }
     .wheel-container.spinning { animation: spinWheel 0.6s linear infinite; }
     @keyframes spinWheel { 0% { transform: translateX(-50%) rotate(0deg); } 100% { transform: translateX(-50%) rotate(360deg); } }
     
     .wheel-inner-ring { position: relative; width: 100%; height: 100%; border-radius: 50%; }
     .wheel-item {
-      position: absolute; width: 24px; height: 24px; font-size: 16px;
+      position: absolute; width: 28px; height: 28px; font-size: 20px;
       display: flex; justify-content: center; align-items: center;
       top: 50%; left: 50%; transform-origin: 0 0;
     }
     .wheel-pointer {
-      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-      width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
-      border-bottom: 12px solid #ef4444; z-index: 20;
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent;
+      border-bottom: 14px solid #ef4444; z-index: 20;
     }
     .wheel-center-logo {
-      position: absolute; width: 35px; height: 35px; background: #0b0f19; border: 2px solid #facc15;
+      position: absolute; width: 42px; height: 42px; background: #0b0f19; border: 2px solid #facc15;
       border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      font-size: 8px; color: #facc15; font-weight: bold; display: flex; justify-content: center; align-items: center; text-align: center; z-index: 15;
+      font-size: 7px; color: #facc15; font-weight: bold; display: flex; justify-content: center; align-items: center; text-align: center; z-index: 15;
     }
 
     .symbols-grid {
       display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(2, 1fr);
-      gap: 8px; margin-top: 45px; position: relative; transition: all 0.3s ease;
+      gap: 8px; margin-top: 60px; position: relative; transition: all 0.3s ease;
     }
     .symbols-grid.popup-active {
       transform: scale(1.04);
@@ -241,7 +241,7 @@ app.get('/', (req, res) => {
         let item = document.createElement('div');
         item.className = 'wheel-item';
         item.innerHTML = s.icon;
-        item.style.transform = \`rotate(\${angle}deg) translate(38px) rotate(-\${angle}deg)\`;
+        item.style.transform = \`rotate(\${angle}deg) translate(48px) rotate(-\${angle}deg)\`;
         ring.appendChild(item);
       });
     }
@@ -330,7 +330,7 @@ app.get('/', (req, res) => {
 
     function submitBets() {
       let total = Object.values(userBets).reduce((a, b) => a + b, 0);
-      if (total === 0) { alert('कृपया आधी बेट लावा!'); return; }
+      if (total === 0) return;
       
       for (let k in userBets) {
         committedBets[k] = (committedBets[k] || 0) + userBets[k];
@@ -365,11 +365,7 @@ app.get('/', (req, res) => {
       document.getElementById('user-timer').innerText = time;
       
       if (time === 10) {
-        // शेवटच्या १० सेकंदात ऑटोमॅटिक बेट ओके (लॉक) करणे
-        let totalUnsubmitted = Object.values(userBets).reduce((a, b) => a + b, 0);
-        if (totalUnsubmitted > 0) {
-          submitBets();
-        }
+        submitBets();
       }
 
       if (time <= 10) {
