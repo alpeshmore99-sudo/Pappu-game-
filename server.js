@@ -6,13 +6,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Global user points store
 let userPointsMap = {};
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Admin Panel Route with Password PP00505555
+// Admin Panel Route
 app.get('/admin', (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="mr">
@@ -29,7 +28,6 @@ app.get('/admin', (req, res) => {
     label { display: block; margin-bottom: 5px; color: #94a3b8; font-size: 14px; }
     input { width: 100%; padding: 12px; background: #1e293b; border: 1px solid #475569; color: #fff; border-radius: 6px; font-size: 16px; }
     .btn { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
-    .btn:hover { background: #1d4ed8; }
     .msg { margin-top: 15px; color: #22c55e; font-weight: bold; font-size: 14px; }
     .err { color: #ef4444; font-weight: bold; font-size: 14px; margin-top: 10px; }
   </style>
@@ -48,11 +46,11 @@ app.get('/admin', (req, res) => {
   <div class="admin-container" id="panel-box" style="display:none;">
     <h2>🛠️ ॲडमिन पनेल (PP00505555)</h2>
     <div class="form-group">
-      <label>वापरकर्त्याचे नाव (Username):</label>
+      <label>वापरकर्त्याचे नाव:</label>
       <input type="text" id="admin-user" placeholder="नाव टाका">
     </div>
     <div class="form-group">
-      <label>पॉइंट्स (Points Set करा):</label>
+      <label>पॉइंट्स सेट करा:</label>
       <input type="number" id="admin-points" placeholder="उदा. 10000">
     </div>
     <button class="btn" onclick="updateUserPoints()">पॉइंट्स अपडेट करा</button>
@@ -73,10 +71,7 @@ app.get('/admin', (req, res) => {
     function updateUserPoints() {
       let username = document.getElementById('admin-user').value.trim();
       let points = document.getElementById('admin-points').value;
-      if(!username || !points) {
-        alert('कृपया सर्व माहिती भरा!');
-        return;
-      }
+      if(!username || !points) { alert('सर्व माहिती भरा!'); return; }
       fetch('/api/update-points', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -91,7 +86,6 @@ app.get('/admin', (req, res) => {
 </html>`);
 });
 
-// API to update points
 app.post('/api/update-points', (req, res) => {
     const { username, points } = req.body;
     userPointsMap[username] = points;
@@ -99,65 +93,53 @@ app.post('/api/update-points', (req, res) => {
     res.json({ success: true });
 });
 
-// Main Game Route
+// Main Game Route with Actual Game Interface
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="mr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Pappu Playing Game</title>
+  <title>Pappu Game</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    body {
-      background: #030712; color: #f8fafc;
-      font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh;
-      display: flex; justify-content: center; align-items: center;
-    }
-    .screen { display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; background: #030712; }
+    body { background: #030712; color: #f8fafc; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+    .screen { display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; background: #030712; flex-direction: column; justify-content: center; align-items: center; }
     .screen.active { display: flex; }
     
-    #login-screen { justify-content: center; align-items: center; flex-direction: column; background: radial-gradient(circle, #1e293b 0%, #030712 100%); }
-    .login-box { background: #0f172a; border: 2px solid #d97706; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 320px; box-shadow: 0 0 25px rgba(217,119,6,0.5); }
-    .login-box h2 { color: #facc15; margin-bottom: 20px; font-size: 20px; }
-    .login-input { width: 100%; padding: 12px; margin-bottom: 15px; background: #1e293b; border: 1px solid #475569; color: #fff; border-radius: 6px; font-size: 14px; text-align: center; }
-    .login-btn { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
+    .box { background: #0f172a; border: 2px solid #d97706; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 340px; box-shadow: 0 0 25px rgba(217,119,6,0.5); }
+    h2 { color: #facc15; margin-bottom: 15px; font-size: 20px; }
+    input, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 6px; border: none; font-size: 16px; }
+    input { background: #1e293b; color: #fff; border: 1px solid #475569; text-align: center; }
+    button { background: #2563eb; color: #fff; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+    button:active { transform: scale(0.98); }
 
-    #dashboard-screen { flex-direction: column; padding: 15px; background: #0b0f19; }
-    .dash-header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px; border-radius: 10px; border: 1px solid #334155; }
-    .dash-title { color: #facc15; font-size: 16px; font-weight: bold; }
-    .dash-points { color: #22c55e; font-size: 16px; font-weight: bold; }
-    .dash-body { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; justify-content: center; align-items: center; flex: 1; }
-    .dash-card { background: #111827; border: 1px solid #374151; border-radius: 10px; width: 100%; max-width: 300px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
-    .dash-card:hover { border-color: #facc15; background: #1f2937; }
-    .dash-card-icon { font-size: 35px; margin-bottom: 8px; }
-    .dash-card-title { font-size: 16px; font-weight: bold; color: #f8fafc; }
+    .game-header { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 15px; background: #1e293b; border-bottom: 1px solid #334155; font-weight: bold; }
+    .game-box { background: #111827; border: 2px solid #22c55e; padding: 20px; border-radius: 12px; text-align: center; width: 90%; max-width: 340px; }
+    .spin-btn { background: #10b981; margin-top: 15px; }
   </style>
 </head>
 <body>
+  <!-- Login Screen -->
   <div id="login-screen" class="screen active">
-    <div class="login-box">
-      <h2>पप्पु लॉगिन</h2>
-      <input type="text" id="username-input" class="login-input" placeholder="तुमचे नाव टाका">
-      <button class="login-btn" onclick="loginUser()">प्रवेश करा</button>
+    <div class="box">
+      <h2>पप्पु गेम लॉगिन</h2>
+      <input type="text" id="username-input" placeholder="तुमचे नाव टाका">
+      <button onclick="loginUser()">प्रवेश करा</button>
     </div>
   </div>
 
-  <div id="dashboard-screen" class="screen">
-    <div class="dash-header">
-      <div class="dash-title" id="welcome-user">स्वागत आहे!</div>
-      <div class="dash-points">पॉइंट्स: <span id="dash-points-val">5000</span></div>
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen">
+    <div class="game-header">
+      <span id="welcome-user" style="color: #60a5fa;">स्वागत आहे</span>
+      <span style="color: #22c55e;">पॉइंट्स: <span id="dash-points-val">5000</span></span>
     </div>
-    <div class="dash-body">
-      <div class="dash-card" onclick="alert('कमिंग सून')">
-        <div class="dash-card-icon">📥</div>
-        <div class="dash-card-title">पॉइंट्स रिसीव्ह</div>
-      </div>
-      <div class="dash-card" onclick="alert('कमिंग सून')">
-        <div class="dash-card-icon">📤</div>
-        <div class="dash-card-title">पॉइंट्स ट्रान्सफर</div>
-      </div>
+    <div class="game-box">
+      <h2>🎮 पप्पु लकी गेम</h2>
+      <p id="game-status" style="margin: 15px 0; color: #94a3b8; font-size: 14px;">बटण दाबून नशीब तपासा!</p>
+      <button class="spin-btn" onclick="playGame()">खेла (Play)</button>
     </div>
   </div>
 
@@ -170,9 +152,23 @@ app.get('/', (req, res) => {
       let name = document.getElementById('username-input').value.trim();
       if (!name) { alert('कृपया नाव टाका'); return; }
       currentUser = name;
-      document.getElementById('welcome-user').innerText = 'स्वागत आहे, ' + name;
+      document.getElementById('welcome-user'].innerText = name;
       document.getElementById('login-screen').classList.remove('active');
-      document.getElementById('dashboard-screen').classList.add('active');
+      document.getElementById('game-screen').classList.add('active');
+    }
+
+    function playGame() {
+      // Simple local game action or animation
+      let status = document.getElementById('game-status');
+      status.innerText = 'गेम सुरू आहे...';
+      setTimeout(() => {
+        let win = Math.random() > 0.5;
+        if(win) {
+          status.innerText = 'अभिनंदन! तुम्ही जिंकलात!';
+        } else {
+          status.innerText = 'पुन्हा प्रयत्न करा!';
+        }
+      }, 1000);
     }
 
     socket.on('points-updated', function(data) {
