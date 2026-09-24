@@ -59,48 +59,56 @@ app.get('/', (req, res) => {
     .stat-val { font-size: 16px; font-weight: bold; color: #facc15; }
     .stat-val.time { color: #f87171; }
     
+    /* 12 Icons Wheel Styling */
     .wheel-container {
-      position: absolute; top: 48px; left: 50%; transform: translateX(-50%);
-      width: 75px; height: 75px; background: radial-gradient(circle, #fbbf24 0%, #b45309 100%);
+      position: absolute; top: 45px; left: 50%; transform: translateX(-50%);
+      width: 110px; height: 110px; background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
       border: 3px solid #facc15; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-      box-shadow: 0 0 20px rgba(250, 204, 21, 0.9); z-index: 10;
+      box-shadow: 0 0 20px rgba(250, 204, 21, 0.8); z-index: 10;
     }
     .wheel-container.spinning { animation: spinWheel 0.6s linear infinite; }
     @keyframes spinWheel { 0% { transform: translateX(-50%) rotate(0deg); } 100% { transform: translateX(-50%) rotate(360deg); } }
-    .wheel-inner { font-size: 32px; position: relative; display: flex; justify-content: center; align-items: center; }
+    
+    .wheel-inner-ring { position: relative; width: 100%; height: 100%; border-radius: 50%; }
+    .wheel-item {
+      position: absolute; width: 24px; height: 24px; font-size: 16px;
+      display: flex; justify-content: center; align-items: center;
+      top: 50%; left: 50%; transform-origin: 0 0;
+    }
     .wheel-pointer {
-      position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
       width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
-      border-bottom: 10px solid #ef4444; z-index: 15;
+      border-bottom: 12px solid #ef4444; z-index: 20;
+    }
+    .wheel-center-logo {
+      position: absolute; width: 35px; height: 35px; background: #0b0f19; border: 2px solid #facc15;
+      border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 8px; color: #facc15; font-weight: bold; display: flex; justify-content: center; align-items: center; text-align: center; z-index: 15;
     }
 
     .symbols-grid {
       display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(2, 1fr);
-      gap: 8px; margin-top: 30px; position: relative; transition: all 0.3s ease;
+      gap: 8px; margin-top: 45px; position: relative; transition: all 0.3s ease;
     }
     .symbols-grid.popup-active {
       transform: scale(1.04);
       background: rgba(15, 23, 42, 0.95);
-      padding: 10px;
-      border-radius: 12px;
+      padding: 10px; border-radius: 12px;
       box-shadow: 0 0 35px rgba(59, 130, 246, 0.6);
       z-index: 25;
     }
 
     .symbol-box {
       background: linear-gradient(to bottom, #1e293b, #0f172a); border: 2px solid #3b82f6;
-      border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; position: relative; transition: transform 0.2s, border-color 0.2s;
+      border-radius: 8px; padding: 6px 4px; text-align: center; cursor: pointer; position: relative; transition: transform 0.2s, border-color 0.2s;
     }
-    .symbols-grid.popup-active .symbol-box {
-      transform: scale(1.05);
-      border-color: #60a5fa;
-    }
+    .symbols-grid.popup-active .symbol-box { transform: scale(1.05); border-color: #60a5fa; }
     .symbol-box.winner-flash {
       border-color: #22c55e !important; background: #064e3b !important;
       animation: flashEffect 0.5s ease infinite alternate;
     }
     @keyframes flashEffect { 0% { box-shadow: 0 0 5px #22c55e; } 100% { box-shadow: 0 0 25px #22c55e; } }
-    .symbol-icon { font-size: 26px; margin-bottom: 2px; }
+    .symbol-icon { font-size: 24px; margin-bottom: 2px; }
     .symbol-title { font-size: 11px; font-weight: bold; color: #e2e8f0; }
     .symbol-bet-amt {
       background: #ef4444; color: #fff; font-size: 11px; font-weight: bold;
@@ -174,11 +182,15 @@ app.get('/', (req, res) => {
           <div class="stat-item"><div class="stat-label">विजेता</div><div class="stat-val" id="last-winner">0</div></div>
         </div>
       </div>
+      
       <div class="wheel-container" id="main-wheel">
         <div class="wheel-pointer"></div>
-        <div class="wheel-inner" id="wheel-center-icon">🎯</div>
+        <div class="wheel-center-logo">PAPPU</div>
+        <div class="wheel-inner-ring" id="wheel-inner-ring"></div>
       </div>
+
       <div class="symbols-grid" id="symbols-grid"></div>
+      
       <div class="footer-bar">
         <div class="chips-row">
           <button class="chip-btn selected" onclick="selectChip(5, this)">5</button>
@@ -220,6 +232,20 @@ app.get('/', (req, res) => {
       { key: 'rabbit', name: 'ससा', icon: '🐇' }
     ];
 
+    function renderWheelIcons() {
+      let ring = document.getElementById('wheel-inner-ring');
+      ring.innerHTML = '';
+      let total = SYMBOLS.length;
+      SYMBOLS.forEach((s, index) => {
+        let angle = (index * 360) / total;
+        let item = document.createElement('div');
+        item.className = 'wheel-item';
+        item.innerHTML = s.icon;
+        item.style.transform = \`rotate(\${angle}deg) translate(38px) rotate(-\${angle}deg)\`;
+        ring.appendChild(item);
+      });
+    }
+
     function loginUser() {
       let name = document.getElementById('username-input').value;
       if (!name) { alert('नाव टाका'); return; }
@@ -231,6 +257,7 @@ app.get('/', (req, res) => {
       document.getElementById('dashboard-screen').classList.remove('active');
       document.getElementById('game-screen').classList.add('active');
       renderGrid();
+      renderWheelIcons();
     }
     function goToDashboard() {
       document.getElementById('game-screen').classList.remove('active');
@@ -311,7 +338,6 @@ app.get('/', (req, res) => {
       userBets = {};
       document.getElementById('total-bet').innerText = '0';
       renderGrid();
-      alert('बेट यशस्वीरीत्या लॉक झाली!');
     }
 
     function takeWinnings() {
@@ -327,7 +353,6 @@ app.get('/', (req, res) => {
         
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
         document.getElementById('symbols-grid').classList.remove('popup-active');
-        document.getElementById('wheel-center-icon').innerText = '🎯';
         userBets = {};
         committedBets = {};
         document.getElementById('total-bet').innerText = '0';
@@ -339,6 +364,14 @@ app.get('/', (req, res) => {
       let time = data.time;
       document.getElementById('user-timer').innerText = time;
       
+      if (time === 10) {
+        // शेवटच्या १० सेकंदात ऑटोमॅटिक बेट ओके (लॉक) करणे
+        let totalUnsubmitted = Object.values(userBets).reduce((a, b) => a + b, 0);
+        if (totalUnsubmitted > 0) {
+          submitBets();
+        }
+      }
+
       if (time <= 10) {
         isBettingClosed = true;
         document.getElementById('symbols-grid').classList.remove('popup-active');
@@ -351,7 +384,6 @@ app.get('/', (req, res) => {
       if (time === 5) {
         let randomSymbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
         document.getElementById('main-wheel').classList.remove('spinning');
-        document.getElementById('wheel-center-icon').innerText = randomSymbol.icon;
 
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
         let winBox = document.getElementById('box-' + randomSymbol.key);
@@ -386,7 +418,6 @@ app.get('/', (req, res) => {
         takeBtn.classList.remove('flashing');
         document.querySelectorAll('.symbol-box').forEach(b => b.classList.remove('winner-flash'));
         document.getElementById('symbols-grid').classList.remove('popup-active');
-        document.getElementById('wheel-center-icon').innerText = '🎯';
         userBets = {};
         committedBets = {};
         document.getElementById('total-bet').innerText = '0';
@@ -395,6 +426,7 @@ app.get('/', (req, res) => {
     });
 
     renderGrid();
+    renderWheelIcons();
   </script>
 </body>
 </html>`);
