@@ -11,9 +11,8 @@ let userPointsMap = {};
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Admin Panel Route
-app.get('/admin', (req, res) => {
-    res.send(`<!DOCTYPE html>
+// Admin Panel Route (Supports both /admin and /admin.html)
+const adminHtml = `<!DOCTYPE html>
 <html lang="mr">
 <head>
   <meta charset="UTF-8">
@@ -83,8 +82,10 @@ app.get('/admin', (req, res) => {
     }
   </script>
 </body>
-</html>`);
-});
+</html>`;
+
+app.get('/admin', (req, res) => res.send(adminHtml));
+app.get('/admin.html', (req, res) => res.send(adminHtml));
 
 app.post('/api/update-points', (req, res) => {
     const { username, points } = req.body;
@@ -93,7 +94,7 @@ app.post('/api/update-points', (req, res) => {
     res.json({ success: true });
 });
 
-// Main Game Route with Actual Game Interface
+// Main Game Route
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="mr">
@@ -139,7 +140,7 @@ app.get('/', (req, res) => {
     <div class="game-box">
       <h2>🎮 पप्पु लकी गेम</h2>
       <p id="game-status" style="margin: 15px 0; color: #94a3b8; font-size: 14px;">बटण दाबून नशीब तपासा!</p>
-      <button class="spin-btn" onclick="playGame()">खेла (Play)</button>
+      <button class="spin-btn" onclick="playGame()">खेळा (Play)</button>
     </div>
   </div>
 
@@ -152,13 +153,12 @@ app.get('/', (req, res) => {
       let name = document.getElementById('username-input').value.trim();
       if (!name) { alert('कृपया नाव टाका'); return; }
       currentUser = name;
-      document.getElementById('welcome-user'].innerText = name;
+      document.getElementById('welcome-user').innerText = 'स्वागत आहे, ' + name;
       document.getElementById('login-screen').classList.remove('active');
       document.getElementById('game-screen').classList.add('active');
     }
 
     function playGame() {
-      // Simple local game action or animation
       let status = document.getElementById('game-status');
       status.innerText = 'गेम सुरू आहे...';
       setTimeout(() => {
